@@ -51,11 +51,25 @@ def parse(path):
 def parse_file(f, name):
     f.seek(-40, os.SEEK_END)
 
-    records_expected = int(
-        f.read().decode('utf8')
-        .rpartition('#recordsWritten:')[2]
-        .rpartition(record_delim)[0]
-    )
+    records_expected = None
+    try:
+        records_expected = int(
+            f.read().decode('utf8')
+            .rpartition('#recordsWritten:')[2]
+            .rpartition(record_delim)[0]
+        )
+    except UnicodeDecodeError:
+        f.seek(-40, os.SEEK_END)
+        content = f.read()
+        while not records_expected:
+            try:
+                records_expected = int(
+                    content.decode('utf8')
+                    .rpartition('#recordsWritten:')[2]
+                    .rpartition(record_delim)[0]
+                )
+            except UnicodeDecodeError:
+                content = content[1:]
     log.debug('Records expected: %s', records_expected)
 
     f.seek(0)
